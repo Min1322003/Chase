@@ -14,6 +14,8 @@ public class Player {
     public float speed = 150f;
     public float radius = 15f;
 
+    public float lives;
+
     public Player(float x, float y) {
         checkpointX = x;
         checkpointY = y;
@@ -21,6 +23,8 @@ public class Player {
         this.y = y;
         this.angle = 0f;
         alive = true;
+
+        lives = 3f;
     }
 
     public void update(float delta, Rectangle[] buildings, Guard[] guards) {
@@ -86,15 +90,33 @@ public class Player {
     }
 
     public void draw(ShapeRenderer sr) {
+        sr.setColor(Color.WHITE);
+        sr.rect(0,1100,250,100);
+        float startingX = 50f;
+        float startingY = 1150f;
+
+        sr.setColor(Color.GREEN);
+        for(int i= 0; i< lives; i++){
+            float x = startingX+(i* ((radius*2)+50));
+            sr.circle(x, startingY, (radius+15));
+
+            sr.line(x,startingY,x,startingY+50);
+        }
+
+        sr.setColor(Color.BLUE);
+        sr.circle(checkpointX,checkpointY,radius+20);
+
         if(alive){
             sr.setColor(Color.GREEN);
-        }else{sr.setColor(Color.GRAY);
+        }else{
+            sr.setColor(Color.GRAY);
         }
         sr.circle(x, y, radius);
 
         float noseX = x + (float)Math.cos(Math.toRadians(angle)) * (radius + 8);
         float noseY = y + (float)Math.sin(Math.toRadians(angle)) * (radius + 8);
         sr.line(x, y, noseX, noseY);
+
 
     }
 
@@ -104,12 +126,16 @@ public class Player {
     }
 
     public void die() {
+        lives--;
         alive = false;
         x = checkpointX;
         y = checkpointY;
     }
 
     public void respawn() {
+        if(lives == 0){
+            lives = 3;
+        }
         alive = true;
     }
 }

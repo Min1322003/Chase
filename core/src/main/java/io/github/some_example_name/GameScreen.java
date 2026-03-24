@@ -1,14 +1,15 @@
 package io.github.some_example_name;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
-import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
-import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
 public class GameScreen implements Screen {
@@ -17,13 +18,21 @@ public class GameScreen implements Screen {
     public ShapeRenderer renderer;
     private Player player;
     private Guard[] guards;
-    private Rectangle[] buildings = {new Rectangle(300, 200, 200, 150),
-        new Rectangle(700, 600, 200, 150),
-        new Rectangle(1000, 200, 200, 150),
-        new Rectangle(200, 1000, 200, 150)};
+    private Rectangle[] buildings = {new Rectangle(0, 200, 500, 150),
+        new Rectangle(750, 200, 500, 150),
+        new Rectangle(100, 500, 200, 150),
+//        new Rectangle(300, 200, 200, 150),
+//        new Rectangle(300, 200, 200, 150),
+//        new Rectangle(700, 600, 200, 150),
+//        new Rectangle(1200, 500, 200, 150),
+//        new Rectangle(100, 1000, 200, 150)
+    };
 
     public static final float WORLD_WIDTH = 1600f;
     public static final float WORLD_HEIGHT = 1200f;
+
+    public BitmapFont font;
+    public SpriteBatch batch;
 
     private PathFinder pathfinder;
 
@@ -34,11 +43,14 @@ public class GameScreen implements Screen {
         camera.update();
         renderer = new ShapeRenderer();
 
+        batch = new SpriteBatch();
+        font = new BitmapFont();
+
         pathfinder = new PathFinder(buildings);
 
         player = new Player(100, 100);
         guards = new Guard[]{new Guard(530, 370, 45, pathfinder),
-            new Guard(1000, 400, 135, pathfinder),
+            new Guard(1000, 400, 90, pathfinder),
             new Guard(430, 970, 315, pathfinder),
             new Guard(1000, 1000, 225, pathfinder),
         };
@@ -55,11 +67,17 @@ public class GameScreen implements Screen {
         ScreenUtils.clear(0, 0, 0, 1);
         renderer.setProjectionMatrix(camera.combined);
 
+        Gdx.gl.glLineWidth(10);
         renderer.begin(ShapeRenderer.ShapeType.Line);
-        renderer.setColor(Color.WHITE);
+        renderer.setColor(Color.DARK_GRAY);
+
         for(Rectangle rt : buildings){
             renderer.rect(rt.x,rt.y,rt.width,rt.height);
         } // x, y, width, height
+        renderer.end();
+
+        Gdx.gl.glLineWidth(1);
+        renderer.begin(ShapeRenderer.ShapeType.Line);
 
         for(Guard g : guards){
             g.update(v,buildings,player);
@@ -68,10 +86,11 @@ public class GameScreen implements Screen {
         player.update(v, buildings,guards);
         player.draw(renderer);
 
-//        if (!player.alive) {
-//            // you'll need a BitmapFont for this
-//            font.draw(batch, "You got caught! Press SPACE to respawn", 250, 320);
-//        }
+        if (!player.alive) {
+            batch.begin();
+            font.draw(batch, "You got caught! Press SPACE to respawn", 70, 30);
+            batch.end();
+        }
 
         renderer.end();
     }

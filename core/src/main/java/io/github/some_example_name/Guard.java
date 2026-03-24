@@ -4,8 +4,12 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
+
+import static java.lang.Thread.sleep;
 
 public class Guard {
     public float x,y;
@@ -19,7 +23,7 @@ public class Guard {
     public float fovRange = 200f;
     public float FOV = 120f;
     public float FOVrotatingAngle = 75f;
-    private float rotationSpeed = 45f;
+    private float rotationSpeed = 30f;
     private float startingAngle;
     float minAngle;
     float maxAngle;
@@ -52,10 +56,10 @@ public class Guard {
             newX += (float) Math.cos(radians) * speed * delta;
             newY += (float) Math.sin(radians) * speed * delta;
 
-            if(!canSeePlayer(player) || !player.alive){
-                path = pathfinder.findPath(x, y, startX, startY);
+            if(!canSeePlayer(player,buildings) && player.alive){
+                path = pathfinder.findPath(x, y, player.x, player.y);
                 pathIndex = 0;
-                state = State.RETURNING;
+                state = State.FOLLOWING;
             }
 
         }else if(state.equals(State.SCOUTING)){
@@ -69,7 +73,7 @@ public class Guard {
                 if (angle <= minAngle) rotatingRight = true;
             }
 
-            if(canSeePlayer(player) && player.alive ){state = State.CHASING;}
+            if(canSeePlayer(player,buildings) && player.alive ){state = State.CHASING;}
 
         } else if (state.equals(State.RETURNING)) {
             if (path != null && pathIndex < path.size) {
@@ -86,13 +90,54 @@ public class Guard {
 
                 float dist = (float) Math.sqrt((targetX - x) * (targetX - x) + (targetY - y) * (targetY - y));
                 if (dist < 5f) pathIndex++;
-                if(canSeePlayer(player) && player.alive ){state = State.CHASING;}
+                if(canSeePlayer(player,buildings) && player.alive ){state = State.CHASING;}
 
             } else {
                 x = startX;
                 y = startY;
                 state = State.SCOUTING;
             }
+        }else if (state.equals(State.FOLLOWING)) {
+            if (path != null && pathIndex < path.size) {
+                Node target = path.get(pathIndex);
+                float targetX = target.col * PathFinder.TILE_SIZE + PathFinder.TILE_SIZE / 2f;
+                float targetY = target.row * PathFinder.TILE_SIZE + PathFinder.TILE_SIZE / 2f;
+
+                float returnAngle = (float) Math.toDegrees(Math.atan2(targetY - y, targetX - x));
+                float radians = (float) Math.toRadians(returnAngle);
+                newX += (float) Math.cos(radians) * speed * delta;
+                newY += (float) Math.sin(radians) * speed * delta;
+
+                this.angle = returnAngle;
+
+                float dist = (float) Math.sqrt((targetX - x) * (targetX - x) + (targetY - y) * (targetY - y));
+                if (dist < 5f) pathIndex++;
+                if(canSeePlayer(player,buildings) && player.alive ){state = State.CHASING;}
+
+            }else {
+                rotatingRight = true;
+                state = State.SEARCHING;
+            }
+        }else if (state.equals(State.SEARCHING)){
+
+            minAngle = startingAngle - 180;
+            maxAngle = startingAngle + 180;
+
+            if (rotatingRight) {
+                angle += rotationSpeed * delta * 3;
+                if (angle >= maxAngle) rotatingRight = false;
+            } else {
+                angle -= rotationSpeed * delta * 3;
+                if (angle <= minAngle) {
+                    rotatingRight = true;
+                    path = pathfinder.findPath(x, y, startX, startY);
+                    pathIndex = 0;
+                    state = State.RETURNING;
+                }
+            }
+
+            if(canSeePlayer(player,buildings) && player.alive ){state = State.CHASING;}
+
         }
 // this now correctly applies to ALL states including RETURNING
         if (!buildingCollides(newX, y, buildings)) x = newX;
@@ -127,11 +172,7 @@ public class Guard {
 
         sr.arc(x,y,fovRange,rightAngle,FOV);
     }
-    public enum State {
-        SCOUTING,
-        CHASING,
-        RETURNING
-    }
+
     private boolean buildingCollides(float cx, float cy, Rectangle[] buildings) {
         for (Rectangle building : buildings) {
             if ((cx + (length/2f)) > building.x &&
@@ -141,9 +182,10 @@ public class Guard {
                 return true;
             }
         }
+
         return false;
     }
-    public boolean canSeePlayer(Player player) {
+    public boolean canSeePlayer(Player player, Rectangle[] buildings) {
         float dx = player.x - x;
         float dy = player.y - y;
         float distance = (float) (Math.sqrt(dx * dx + dy * dy)- player.radius);
@@ -152,7 +194,28 @@ public class Guard {
         float angleToPlayer = (float) Math.toDegrees(Math.atan2(dy, dx));
         float angleDiff = Math.abs(angleToPlayer - angle) % 360;
         if (angleDiff > 180) angleDiff = 360 - angleDiff; // normalize to 0-180
-        return (angleDiff <= FOV / 2f);
+
+        if(angleDiff <= FOV / 2f){
+            Vector2 guardPos = new Vector2(x, y);
+            Vector2 playerPos = new Vector2(player.x, player.y);
+
+            for (Rectangle rect : buildings) {
+                if (Intersector.intersectSegmentRectangle(guardPos, playerPos, rect)) {
+                    return false; // vision blocked
+                }
+            }
+
+
+            return true;
+        }else {return false;}
+    }
+
+    public enum State {
+        SCOUTING,
+        CHASING,
+        RETURNING,
+        FOLLOWING,
+        SEARCHING
     }
 
 }
