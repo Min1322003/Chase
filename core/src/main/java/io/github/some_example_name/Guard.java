@@ -49,17 +49,21 @@ public class Guard {
         float newX = x;
         float newY = y;
         if(state.equals(State.CHASING)) {
-            speed = maxspeed;
-            angle = (float) Math.toDegrees(Math.atan2(player.y - y, player.x - x));
+            if(canSeePlayer(player,buildings) && player.alive){
+                speed = maxspeed;
+                angle = (float) Math.toDegrees(Math.atan2(player.y - y, player.x - x));
 
-            float radians = (float) Math.toRadians(angle);
-            newX += (float) Math.cos(radians) * speed * delta;
-            newY += (float) Math.sin(radians) * speed * delta;
-
-            if(!canSeePlayer(player,buildings) && player.alive){
-                path = pathfinder.findPath(x, y, player.x, player.y);
+                float radians = (float) Math.toRadians(angle);
+                newX += (float) Math.cos(radians) * speed * delta;
+                newY += (float) Math.sin(radians) * speed * delta;
+            }else if(!canSeePlayer(player,buildings) && player.alive){
+                path = pathfinder.findPath(x, y, player.lastX, player.lastY);
                 pathIndex = 0;
                 state = State.FOLLOWING;
+            }else{
+                path = pathfinder.findPath(x, y, startX, startY);
+                pathIndex = 0;
+                state = State.RETURNING;
             }
 
         }else if(state.equals(State.SCOUTING)){
@@ -97,7 +101,8 @@ public class Guard {
                 y = startY;
                 state = State.SCOUTING;
             }
-        }else if (state.equals(State.FOLLOWING)) {
+        }
+        else if (state.equals(State.FOLLOWING)) {
             if (path != null && pathIndex < path.size) {
                 Node target = path.get(pathIndex);
                 float targetX = target.col * PathFinder.TILE_SIZE + PathFinder.TILE_SIZE / 2f;
@@ -139,7 +144,6 @@ public class Guard {
             if(canSeePlayer(player,buildings) && player.alive ){state = State.CHASING;}
 
         }
-// this now correctly applies to ALL states including RETURNING
         if (!buildingCollides(newX, y, buildings)) x = newX;
         if (!buildingCollides(x, newY, buildings)) y = newY;
 
@@ -148,7 +152,7 @@ public class Guard {
     public void draw(ShapeRenderer sr){
         if (state.equals(State.CHASING)){
             sr.setColor(Color.RED);
-        } else if (state.equals(State.SCOUTING)) {
+        } else if (state.equals(State.SCOUTING) || state.equals(State.RETURNING)) {
             sr.setColor(Color.YELLOW);
         }else {
             sr.setColor(Color.ORANGE);
@@ -158,10 +162,10 @@ public class Guard {
         float renderY = y-(length/2f);
         sr.rect(renderX,renderY,length,length);
 
-        float noseX = x + (float)Math.cos(Math.toRadians(angle)) * (length + 8);
-        float noseY = y + (float)Math.sin(Math.toRadians(angle)) * (length + 8);
-
-        sr.line(x, y, noseX, noseY);
+//        float noseX = x + (float)Math.cos(Math.toRadians(angle)) * (length + 8);
+//        float noseY = y + (float)Math.sin(Math.toRadians(angle)) * (length + 8);
+//
+//        sr.line(x, y, noseX, noseY);
 
         float leftAngle  = angle + FOV / 2f;
         float rightAngle = angle - FOV / 2f;

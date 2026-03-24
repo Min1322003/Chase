@@ -18,14 +18,14 @@ public class GameScreen implements Screen {
     public ShapeRenderer renderer;
     private Player player;
     private Guard[] guards;
-    private Rectangle[] buildings = {new Rectangle(0, 200, 500, 150),
+    private Rectangle[] buildings = {new Rectangle(100, 200, 400, 150),
         new Rectangle(750, 200, 500, 150),
         new Rectangle(100, 500, 200, 150),
-//        new Rectangle(300, 200, 200, 150),
-//        new Rectangle(300, 200, 200, 150),
-//        new Rectangle(700, 600, 200, 150),
-//        new Rectangle(1200, 500, 200, 150),
-//        new Rectangle(100, 1000, 200, 150)
+        new Rectangle(600, 600, 200, 150),
+        new Rectangle(100, 1000, 300, 150),
+        new Rectangle(700, 850, 50, 400),
+        new Rectangle(1200, 900, 200, 200),
+        new Rectangle(1200, 600, 200, 50)
     };
 
     public static final float WORLD_WIDTH = 1600f;

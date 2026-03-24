@@ -6,9 +6,13 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
 
+import static io.github.some_example_name.GameScreen.WORLD_HEIGHT;
+import static io.github.some_example_name.GameScreen.WORLD_WIDTH;
+
 public class Player {
-    public float x, y;
+    public float x, y,lastX,lastY;
     public float checkpointX, checkpointY;
+
     public boolean alive ;
     public float angle;
     public float speed = 150f;
@@ -34,6 +38,9 @@ public class Player {
         } else {
             float newX = x;
             float newY = y;
+
+            lastX = x;
+            lastY = y;
 
             if (Gdx.input.isKeyPressed(Input.Keys.LEFT) )  newX -= speed * delta;
             if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) newX += speed * delta;
@@ -62,6 +69,19 @@ public class Player {
             else if (up)    angle = 90;
             else if (left)  angle = 180;
             else if (down)  angle = 270;
+
+            if (x > WORLD_WIDTH) {
+                x = -radius;
+            } else if (x + radius < 0) {
+                x = WORLD_WIDTH;
+            }
+
+            if (y > WORLD_HEIGHT) {
+                y = -radius;
+            } else if (y + radius < 0) {
+                y = WORLD_HEIGHT;
+            }
+
         }
     }
     private boolean guardCollides(float cx, float cy, Guard[] guards) {
@@ -120,10 +140,10 @@ public class Player {
 
     }
 
-    public void saveCheckpoint() {
-        checkpointX = x;
-        checkpointY = y;
-    }
+//    public void saveCheckpoint() {
+//        checkpointX = x;
+//        checkpointY = y;
+//    }
 
     public void die() {
         lives--;
